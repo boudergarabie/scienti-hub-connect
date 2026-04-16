@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
-import { agenda, speakers, CONFERENCE } from "@/data/mockData";
 import { Search, Clock, MapPin, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useQuery } from "@tanstack/react-query";
+import { isWithinInterval, parse, setDate, setMonth, setYear } from "date-fns";
+import { CONFERENCE } from "@/data/mockData";
 
 const Program = () => {
   const [search, setSearch] = useState("");
@@ -17,27 +19,54 @@ const Program = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const themes = [...new Set(agenda.map((a) => a.theme))];
+  const { data: agenda = [], isLoading } = useQuery({
+    queryKey: ["agenda"],
+    queryFn: async () => {
+      const res = await fetch("/api/agenda");
+      if (!res.ok) throw new Error("Failed to fetch agenda");
+      return res.json();
+    }
+  });
 
-  const isCurrentSession = (item: (typeof agenda)[0]) => {
-    const today = new Date();
-    const confStart = new Date(CONFERENCE.date);
-    const dayDiff = Math.floor((today.getTime() - confStart.getTime()) / (1000 * 60 * 60 * 24));
-    const conferenceDay = dayDiff + 1;
-    return item.day === conferenceDay && currentHour >= item.startHour && currentHour < item.endHour;
+  const themes = [...new Set(agenda.map((a: any) => a.theme))];
+
+  const isCurrentSession = (item: any) => {
+    try {
+      const now = new Date();
+      
+      // Parse "09:00 - 10:30" or "09:00 – 10:30"
+      const timeParts = item.timeSlot.split(/[-–]/).map((t: string) => t.trim());
+      if (timeParts.length !== 2) return false;
+      
+      let start = parse(timeParts[0], "HH:mm", new Date());
+      let end = parse(timeParts[1], "HH:mm", new Date());
+      
+      // Assume conference starts on CONFERENCE.date, item.day defines the actual day of the month
+      const confStart = new Date(CONFERENCE.date);
+      const sessionDate = new Date(confStart);
+      sessionDate.setDate(confStart.getDate() + (item.day - 1));
+
+      // Match the parsed times to the correct conference day
+      start = setYear(setMonth(setDate(start, sessionDate.getDate()), sessionDate.getMonth()), sessionDate.getFullYear());
+      end = setYear(setMonth(setDate(end, sessionDate.getDate()), sessionDate.getMonth()), sessionDate.getFullYear());
+
+      return isWithinInterval(now, { start, end });
+    } catch (e) {
+      return false;
+    }
   };
 
   const filtered = agenda
-    .filter((a) => a.day === dayFilter)
-    .filter((a) => !themeFilter || a.theme === themeFilter)
-    .filter((a) => {
+    .filter((a: any) => a.day === dayFilter)
+    .filter((a: any) => !themeFilter || a.theme === themeFilter)
+    .filter((a: any) => {
       if (!search) return true;
-      const speaker = speakers.find((s) => s.id === a.speakerId);
+      const speakerObj = a.speakerId;
       const q = search.toLowerCase();
       return (
-        a.sessionTitle.toLowerCase().includes(q) ||
-        speaker?.name.toLowerCase().includes(q) ||
-        speaker?.country.toLowerCase().includes(q)
+        a.sessionTitle?.toLowerCase().includes(q) ||
+        speakerObj?.fullName?.toLowerCase().includes(q) ||
+        speakerObj?.affiliation?.toLowerCase().includes(q)
       );
     });
 
@@ -87,12 +116,14 @@ const Program = () => {
 
         {/* Agenda list */}
         <div className="space-y-4">
-          {filtered.map((item) => {
-            const speaker = speakers.find((s) => s.id === item.speakerId);
+          {isLoading ? (
+            <p className="text-center py-12 text-muted-foreground">Loading agenda...</p>
+          ) : filtered.map((item: any) => {
+            const speaker = item.speakerId;
             const isCurrent = isCurrentSession(item);
             return (
               <div
-                key={item.id}
+                key={item._id || item.id}
                 className={`bg-card border rounded-lg p-5 shadow-card transition-all ${
                   isCurrent
                     ? "border-gold ring-2 ring-gold/30 bg-gold/5"
@@ -113,12 +144,12 @@ const Program = () => {
                     <h3 className="font-display text-lg font-semibold text-foreground">{item.sessionTitle}</h3>
                     {speaker && (
                       <p className="text-muted-foreground text-sm mt-1">
-                        {speaker.name} — {speaker.affiliation}, {speaker.country}
+                        {speaker.fullName} — {speaker.affiliation}
                       </p>
                     )}
                     <div className="flex flex-wrap gap-2 mt-2">
                       <span className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-md text-muted-foreground">
-                        <MapPin className="h-3 w-3" /> {item.room}
+                        <MapPin className="h-3 w-3" /> {item.roomLocation || item.room}
                       </span>
                       <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-md">
                         {item.theme}

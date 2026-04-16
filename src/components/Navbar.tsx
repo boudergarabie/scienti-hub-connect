@@ -1,21 +1,36 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, GraduationCap } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, GraduationCap, LogOut, Shield } from "lucide-react";
 import { CONFERENCE } from "@/data/mockData";
-
-const navItems = [
-  { label: "Home", path: "/" },
-  { label: "Committee", path: "/committee" },
-  { label: "Speakers", path: "/speakers" },
-  { label: "Program", path: "/program" },
-  { label: "Submit Paper", path: "/submit" },
-  { label: "Dashboard", path: "/dashboard" },
-  { label: "Certificate", path: "/certificate" },
-];
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, isAdmin, logout, user } = useAuth();
+
+  const publicNavItems = [
+    { label: "Home", path: "/" },
+    { label: "Committee", path: "/committee" },
+    { label: "Speakers", path: "/speakers" },
+    { label: "Program", path: "/program" },
+  ];
+
+  // Admins manage papers, they don't submit — hide "Submit Paper" for Admin
+  // Attendees only see Certificate among protected routes
+  const privateNavItems = [
+    ...(!isAdmin && user?.userCategory === 'Author' ? [{ label: "Submit Paper", path: "/submit" }] : []),
+    ...(user?.userCategory === 'Author' || isAdmin ? [{ label: "Dashboard", path: "/dashboard" }] : []),
+    { label: "Certificate", path: "/certificate" },
+  ];
+
+  const navItems = isAuthenticated ? [...publicNavItems, ...privateNavItems] : publicNavItems;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
@@ -44,12 +59,35 @@ const Navbar = () => {
           ))}
         </div>
 
-        <Link
-          to="/submit"
-          className="hidden lg:inline-flex px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
-        >
-          Register Now
-        </Link>
+        {isAuthenticated ? (
+          <div className="hidden lg:flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {isAdmin && <Shield className="h-4 w-4 text-gold" />}
+              <span className="text-sm font-medium">
+                Hello, {user?.name.split(' ')[0]}
+              </span>
+              {isAdmin && (
+                <span className="text-xs bg-gold/15 text-gold px-2 py-0.5 rounded-full font-semibold">
+                  Admin
+                </span>
+              )}
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          </div>
+        ) : (
+          <Link
+            to="/auth"
+            className="hidden lg:inline-flex px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
+          >
+            Sign In / Register
+          </Link>
+        )}
 
         {/* Mobile toggle */}
         <button className="lg:hidden text-foreground" onClick={() => setOpen(!open)}>
@@ -74,6 +112,23 @@ const Navbar = () => {
               {item.label}
             </Link>
           ))}
+          {isAuthenticated ? (
+            <button
+              onClick={() => { handleLogout(); setOpen(false); }}
+              className="w-full text-left px-6 py-3 text-sm font-medium text-destructive transition-colors hover:bg-muted flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              onClick={() => setOpen(false)}
+              className="block px-6 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            >
+              Sign In / Register
+            </Link>
+          )}
         </div>
       )}
     </nav>
