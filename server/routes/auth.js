@@ -8,8 +8,11 @@ import { auth } from '../middleware/auth.js';
 const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Admin email — this email is always forced to the 'Admin' role
-const ADMIN_EMAIL = 'rabieboudrega63@gmail.com';
+// Emails that are always forced to the 'Admin' role
+const ADMIN_EMAILS = new Set([
+  'rabieboudrega63@gmail.com',
+  'admin@admin.com',
+]);
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET || 'your_super_secret_jwt_key', { expiresIn: '30d' });
@@ -17,7 +20,7 @@ const generateToken = (id, role) => {
 
 // Helper: determine role based on email for initial setup
 const resolveRole = (email) => {
-  return email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'Admin' : 'User';
+  return ADMIN_EMAILS.has(email.toLowerCase()) ? 'Admin' : 'User';
 };
 
 // @route POST /api/auth/register
@@ -61,7 +64,7 @@ router.post('/login', async (req, res) => {
 
     if (user && user.authProvider === 'Local' && (await bcrypt.compare(password, user.passwordHash))) {
       // Only force Master Admin to 'Admin', do not demote other roles
-      if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && user.role !== 'Admin') {
+      if (ADMIN_EMAILS.has(email.toLowerCase()) && user.role !== 'Admin') {
         user.role = 'Admin';
         await user.save();
       }
@@ -106,7 +109,7 @@ router.post('/google', async (req, res) => {
         });
       } else {
         // Only force Master Admin to 'Admin', do not demote other admins
-        if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && user.role !== 'Admin') {
+        if (ADMIN_EMAILS.has(email.toLowerCase()) && user.role !== 'Admin') {
           user.role = 'Admin';
           await user.save();
         }

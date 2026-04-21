@@ -160,6 +160,7 @@ router.put('/speaker-requests/:id/approve', auth, adminAuth, async (req, res) =>
       theme: speakerReq.theme,
       biography: speakerReq.biography,
       photoURL: speakerReq.photoURL,
+      submissionId: speakerReq.submissionId,
     });
 
     // Mark request as approved

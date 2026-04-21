@@ -1,5 +1,6 @@
 import express from 'express';
 import Speaker from '../models/Speaker.js';
+import Submission from '../models/Submission.js';
 
 const router = express.Router();
 
@@ -44,6 +45,23 @@ router.get('/filters', async (req, res) => {
       countries: countries.filter(Boolean).sort(),
       themes: themes.filter(Boolean).sort(),
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/speakers/:id/paper
+// @desc    Get the submission linked to a speaker profile
+// @access  Public
+router.get('/:id/paper', async (req, res) => {
+  try {
+    const speaker = await Speaker.findById(req.params.id);
+    if (!speaker) return res.status(404).json({ message: 'Speaker not found' });
+    if (!speaker.submissionId) return res.json(null);
+
+    const submission = await Submission.findById(speaker.submissionId)
+      .select('paperTitle abstract trackTheme authorsList status paperFileURL submittedAt');
+    res.json(submission || null);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

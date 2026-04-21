@@ -11,6 +11,7 @@ const submissionSchema = new mongoose.Schema({
     enum: ['Pending', 'Under Review', 'Accepted', 'Rejected', 'Published'],
     default: 'Pending',
   },
+  paperFileURL: { type: String, default: '' },
   submittedAt: { type: Date, default: Date.now },
 });
 

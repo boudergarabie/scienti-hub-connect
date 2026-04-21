@@ -166,17 +166,25 @@ const Certificate = () => {
           )}
 
           {/* Active certificate */}
-          <CertificateCard
-            type={activeCert.type}
-            displayName={displayName}
-            roleBadge={roleBadge}
-            paperTitle={activeCert.paperTitle}
-          />
+          <div id="certificate-print-area">
+            <CertificateCard
+              type={activeCert.type}
+              displayName={displayName}
+              roleBadge={roleBadge}
+              paperTitle={activeCert.paperTitle}
+            />
+          </div>
 
           <div className="text-center">
-            <button className="bg-primary text-primary-foreground px-6 py-3 rounded-md font-semibold inline-flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <Download className="h-4 w-4" /> Download Certificate (Preview)
+            <button
+              onClick={() => window.print()}
+              className="bg-primary text-primary-foreground px-6 py-3 rounded-md font-semibold inline-flex items-center gap-2 hover:opacity-90 transition-opacity"
+            >
+              <Download className="h-4 w-4" /> Download Certificate
             </button>
+            <p className="text-xs text-muted-foreground mt-2">
+              Choose "Save as PDF" in the print dialog to download the file.
+            </p>
           </div>
         </div>
       </div>
