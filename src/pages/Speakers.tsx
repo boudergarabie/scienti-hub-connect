@@ -5,15 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 
 const Speakers = () => {
   const [query, setQuery] = useState("");
-  const [countryFilter, setCountryFilter] = useState("");
   const [themeFilter, setThemeFilter] = useState("");
 
   // Fetch speakers from API with filters
   const { data: speakers = [], isLoading } = useQuery({
-    queryKey: ["speakers", countryFilter, themeFilter, query],
+    queryKey: ["speakers", themeFilter, query],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (countryFilter) params.set("country", countryFilter);
+
       if (themeFilter) params.set("theme", themeFilter);
       if (query) params.set("q", query);
       const res = await fetch(`/api/speakers?${params.toString()}`);
@@ -32,7 +31,6 @@ const Speakers = () => {
     },
   });
 
-  const countries: string[] = filterOptions?.countries || [];
   const themes: string[] = filterOptions?.themes || [];
 
   const initials = (name: string) =>
@@ -44,11 +42,10 @@ const Speakers = () => {
 
   const clearFilters = () => {
     setQuery("");
-    setCountryFilter("");
     setThemeFilter("");
   };
 
-  const hasActiveFilters = query || countryFilter || themeFilter;
+  const hasActiveFilters = query || themeFilter;
 
   return (
     <div className="pb-24 pt-10 px-4">
@@ -83,16 +80,6 @@ const Speakers = () => {
               />
             </div>
             <select
-              value={countryFilter}
-              onChange={(e) => setCountryFilter(e.target.value)}
-              className="bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground min-w-[160px]"
-            >
-              <option value="">All Countries</option>
-              {countries.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <select
               value={themeFilter}
               onChange={(e) => setThemeFilter(e.target.value)}
               className="bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground min-w-[200px]"
@@ -115,7 +102,18 @@ const Speakers = () => {
 
         {/* Speakers Grid */}
         {isLoading ? (
-          <p className="text-center py-12 text-muted-foreground">Loading speakers...</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-lg overflow-hidden shadow-card animate-pulse">
+                <div className="bg-muted h-28" />
+                <div className="p-5 space-y-3">
+                  <div className="h-5 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
+                  <div className="h-3 bg-muted rounded w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {speakers.map((s: any) => (
@@ -125,11 +123,17 @@ const Speakers = () => {
               >
                 <div className="bg-hero h-28 flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-card/20 backdrop-blur flex items-center justify-center text-primary-foreground font-display text-xl font-bold border-2 border-gold/40">
-                    {initials(s.fullName || "")}
+                    {s.photoURL ? (
+                      <img src={s.photoURL} alt={s.fullName} className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      initials(s.fullName || "")
+                    )}
                   </div>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-display text-lg font-semibold text-foreground">{s.fullName}</h3>
+                  <h3 className="font-display text-lg font-semibold text-foreground">
+                    {s.academicTitle ? `${s.academicTitle} ` : ""}{s.fullName}
+                  </h3>
                   <p className="text-gold text-sm font-medium">{s.topic || "Speaker"}</p>
                   <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-2">
                     <MapPin className="h-3.5 w-3.5 shrink-0" />

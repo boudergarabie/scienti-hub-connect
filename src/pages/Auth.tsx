@@ -27,12 +27,12 @@ const Auth = () => {
       const data = await res.json();
 
       if (res.ok) {
-        login({ _id: data._id, name: data.name, email: data.email, role: data.role }, data.token);
+        login({ _id: data._id, name: data.name, email: data.email, role: data.role, userCategory: data.userCategory }, data.token);
         toast({
           title: isLogin ? "Welcome back!" : "Account created!",
           description: "You have successfully authenticated.",
         });
-        navigate("/dashboard");
+        navigate(data.role === 'Admin' ? "/admin-dashboard" : "/");
       } else {
         toast({
           title: "Authentication Failed",
@@ -55,12 +55,12 @@ const Auth = () => {
       const data = await res.json();
 
       if (res.ok) {
-        login({ _id: data._id, name: data.name, email: data.email, role: data.role }, data.token);
+        login({ _id: data._id, name: data.name, email: data.email, role: data.role, userCategory: data.userCategory }, data.token);
         toast({
           title: "Welcome back!",
           description: "Successfully authenticated with Google.",
         });
-        navigate("/dashboard");
+        navigate(data.role === 'Admin' ? "/admin-dashboard" : "/");
       } else {
         toast({
           title: "Google Authentication Failed",

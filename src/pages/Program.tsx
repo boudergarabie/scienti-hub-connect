@@ -117,7 +117,23 @@ const Program = () => {
         {/* Agenda list */}
         <div className="space-y-4">
           {isLoading ? (
-            <p className="text-center py-12 text-muted-foreground">Loading agenda...</p>
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-card border border-border rounded-lg p-5 shadow-card animate-pulse">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="h-4 bg-muted rounded w-28" />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-5 bg-muted rounded w-3/4" />
+                      <div className="h-3 bg-muted rounded w-1/2" />
+                      <div className="flex gap-2">
+                        <div className="h-5 bg-muted rounded w-24" />
+                        <div className="h-5 bg-muted rounded w-32" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : filtered.map((item: any) => {
             const speaker = item.speakerId;
             const isCurrent = isCurrentSession(item);
@@ -144,7 +160,7 @@ const Program = () => {
                     <h3 className="font-display text-lg font-semibold text-foreground">{item.sessionTitle}</h3>
                     {speaker && (
                       <p className="text-muted-foreground text-sm mt-1">
-                        {speaker.fullName} — {speaker.affiliation}
+                        {speaker.academicTitle ? `${speaker.academicTitle} ` : ""}{speaker.fullName} — {speaker.affiliation}
                       </p>
                     )}
                     <div className="flex flex-wrap gap-2 mt-2">

@@ -8,7 +8,7 @@ const submissionSchema = new mongoose.Schema({
   trackTheme: { type: String },
   status: {
     type: String,
-    enum: ['Pending', 'Under Review', 'Reviewed', 'Accepted', 'Rejected', 'Published'],
+    enum: ['Pending', 'Under Review', 'Accepted', 'Rejected', 'Published'],
     default: 'Pending',
   },
   submittedAt: { type: Date, default: Date.now },

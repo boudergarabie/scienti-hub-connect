@@ -10,22 +10,43 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isAdmin, logout, user } = useAuth();
 
-  const publicNavItems = [
-    { label: "Home", path: "/" },
-    { label: "Committee", path: "/committee" },
-    { label: "Speakers", path: "/speakers" },
-    { label: "Program", path: "/program" },
-  ];
-
-  // Admins manage papers, they don't submit — hide "Submit Paper" for Admin
-  // Attendees only see Certificate among protected routes
-  const privateNavItems = [
-    ...(!isAdmin && user?.userCategory === 'Author' ? [{ label: "Submit Paper", path: "/submit" }] : []),
-    ...(user?.userCategory === 'Author' || isAdmin ? [{ label: "Dashboard", path: "/dashboard" }] : []),
-    { label: "Certificate", path: "/certificate" },
-  ];
-
-  const navItems = isAuthenticated ? [...publicNavItems, ...privateNavItems] : publicNavItems;
+  let navItems = [];
+  if (!isAuthenticated) {
+    navItems = [
+      { label: "Home", path: "/" },
+      { label: "Committee", path: "/committee" },
+      { label: "Speakers", path: "/speakers" },
+      { label: "Program", path: "/program" },
+    ];
+  } else if (isAdmin) {
+    navItems = [
+      { label: "Home", path: "/" },
+      { label: "Committee", path: "/committee" },
+      { label: "Speakers", path: "/speakers" },
+      { label: "Program", path: "/program" },
+      { label: "Management", path: "/management" },
+      { label: "Dashboard", path: "/admin-dashboard" },
+    ];
+  } else if (user?.userCategory === "Author") {
+    navItems = [
+      { label: "Home", path: "/" },
+      { label: "Committee", path: "/committee" },
+      { label: "Speakers", path: "/speakers" },
+      { label: "Program", path: "/program" },
+      { label: "Submit Paper", path: "/submit" },
+      { label: "Dashboard", path: "/dashboard" },
+      { label: "Certificate", path: "/certificate" },
+    ];
+  } else {
+    // Attendee or missing userCategory
+    navItems = [
+      { label: "Home", path: "/" },
+      { label: "Committee", path: "/committee" },
+      { label: "Speakers", path: "/speakers" },
+      { label: "Program", path: "/program" },
+      { label: "Certificate", path: "/certificate" },
+    ];
+  }
 
   const handleLogout = () => {
     logout();

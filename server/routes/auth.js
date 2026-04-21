@@ -15,9 +15,9 @@ const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET || 'your_super_secret_jwt_key', { expiresIn: '30d' });
 };
 
-// Helper: determine role based on email
+// Helper: determine role based on email for initial setup
 const resolveRole = (email) => {
-  return email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'Admin' : 'Author';
+  return email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'Admin' : 'User';
 };
 
 // @route POST /api/auth/register
@@ -60,10 +60,9 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && user.authProvider === 'Local' && (await bcrypt.compare(password, user.passwordHash))) {
-      // Check if role needs to be updated (in case admin email was registered before this logic)
-      const correctRole = resolveRole(email);
-      if (user.role !== correctRole) {
-        user.role = correctRole;
+      // Only force Master Admin to 'Admin', do not demote other roles
+      if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && user.role !== 'Admin') {
+        user.role = 'Admin';
         await user.save();
       }
 
@@ -106,9 +105,9 @@ router.post('/google', async (req, res) => {
           role,
         });
       } else {
-        // Update role if it needs correcting (e.g. admin email)
-        if (user.role !== role) {
-          user.role = role;
+        // Only force Master Admin to 'Admin', do not demote other admins
+        if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && user.role !== 'Admin') {
+          user.role = 'Admin';
           await user.save();
         }
       }

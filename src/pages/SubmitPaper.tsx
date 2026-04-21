@@ -14,7 +14,7 @@ interface FormErrors {
 
 const SubmitPaper = () => {
   const { toast } = useToast();
-  const { isAuthenticated, isAdmin, token, user } = useAuth();
+  const { isAuthenticated, isAdmin, token, user, updateUserCategory } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -136,6 +136,25 @@ const SubmitPaper = () => {
 
       if (!res.ok) {
         throw new Error("Failed to submit paper, please try again.");
+      }
+
+      // Automatic Role Promotion for Attendees submitting a paper
+      if (user?.userCategory !== 'Author') {
+        try {
+          const catRes = await fetch("/api/auth/category", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ category: 'Author' })
+          });
+          if (catRes.ok) {
+            updateUserCategory('Author');
+          }
+        } catch (catErr) {
+          console.error("Failed to update user category automatically", catErr);
+        }
       }
 
       setSubmitted(true);
