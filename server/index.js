@@ -54,6 +54,13 @@ app.use('/api/agenda', agendaRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/speakers', speakerRoutes);
 
+// Global JSON error handler — must have 4 params for Express to treat it as error middleware
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({ message: err.message || 'Internal server error' });
+});
+
 // Start HTTP server only in local dev (Vercel sets NODE_ENV=production)
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;

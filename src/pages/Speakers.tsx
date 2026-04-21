@@ -63,31 +63,31 @@ const PaperDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">
+          <DialogTitle className="font-display text-lg sm:text-xl leading-snug">
             {speaker?.academicTitle ? `${speaker.academicTitle} ` : ""}
             {speaker?.fullName}
           </DialogTitle>
           {speaker?.affiliation && (
-            <p className="text-sm text-muted-foreground flex items-center gap-1">
+            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 mt-1">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
-              {speaker.affiliation}{speaker.country ? `, ${speaker.country}` : ""}
+              <span className="break-words">{speaker.affiliation}{speaker.country ? `, ${speaker.country}` : ""}</span>
             </p>
           )}
         </DialogHeader>
 
         {/* Speaker bio */}
         {speaker?.biography && (
-          <div className="bg-muted/40 rounded-lg p-4">
-            <p className="text-sm text-foreground leading-relaxed">{speaker.biography}</p>
+          <div className="bg-muted/40 rounded-lg p-3 sm:p-4 mt-2">
+            <p className="text-xs sm:text-sm text-foreground leading-relaxed">{speaker.biography}</p>
           </div>
         )}
 
         {/* Paper section */}
         <div className="border-t border-border pt-4 mt-2">
-          <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
-            <FileText className="h-4 w-4 text-primary" /> Submitted Paper
+          <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3 text-sm sm:text-base">
+            <FileText className="h-4 w-4 text-primary shrink-0" /> Submitted Paper
           </h3>
 
           {isLoading && (
@@ -104,17 +104,17 @@ const PaperDialog = ({
             <div className="space-y-4">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Title</p>
-                <p className="font-display text-lg font-semibold text-foreground leading-snug">
+                <p className="font-display text-base sm:text-lg font-semibold text-foreground leading-snug">
                   {paper.paperTitle}
                 </p>
               </div>
 
               {paper.trackTheme && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground">{paper.trackTheme}</span>
+                  <span className="text-xs sm:text-sm text-muted-foreground">{paper.trackTheme}</span>
                   {paper.status && (
-                    <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[paper.status] ?? "bg-muted text-muted-foreground"}`}>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[paper.status] ?? "bg-muted text-muted-foreground"}`}>
                       {paper.status}
                     </span>
                   )}
@@ -124,13 +124,13 @@ const PaperDialog = ({
               {paper.authorsList && (
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Co-Authors</p>
-                  <p className="text-sm text-foreground">{paper.authorsList}</p>
+                  <p className="text-xs sm:text-sm text-foreground">{paper.authorsList}</p>
                 </div>
               )}
 
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Abstract</p>
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{paper.abstract}</p>
+                <p className="text-xs sm:text-sm text-foreground leading-relaxed whitespace-pre-line">{paper.abstract}</p>
               </div>
 
               {paper.paperFileURL && (
@@ -139,7 +139,7 @@ const PaperDialog = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   download
-                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto sm:inline-flex bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   <Download className="h-4 w-4" /> Download PDF
                 </a>

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -29,7 +29,8 @@ const ALL_STATUSES: string[] = ["Pending", "Under Review", "Accepted", "Rejected
 
 // ─── Zod Schemas ───────────────────────────────────────────────
 const agendaSchema = z.object({
-  timeSlot: z.string().min(1, "Time slot is required"),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
   sessionTitle: z.string().min(1, "Session title is required").max(200),
   speakerId: z.string().optional(),
   roomLocation: z.string().max(120).optional(),
@@ -455,12 +456,20 @@ const AgendaManagementTab = () => {
   const { token } = useAuth();
   const { toast } = useToast();
 
-  // Fetch speakers for dropdown
   const { data: speakers = [] } = useQuery({
     queryKey: ["speakers"],
     queryFn: async () => {
       const res = await fetch("/api/speakers");
       if (!res.ok) throw new Error("Failed to fetch speakers");
+      return res.json();
+    },
+  });
+
+  const { data: agendaItems = [] } = useQuery({
+    queryKey: ["agenda"],
+    queryFn: async () => {
+      const res = await fetch("/api/agenda");
+      if (!res.ok) throw new Error("Failed to fetch agenda");
       return res.json();
     },
   });
@@ -474,15 +483,40 @@ const AgendaManagementTab = () => {
     formState: { errors, isSubmitting },
   } = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
-    defaultValues: { timeSlot: "", sessionTitle: "", speakerId: "", roomLocation: "", theme: "", day: 1 },
+    defaultValues: { startTime: "", endTime: "", sessionTitle: "", speakerId: "", roomLocation: "", theme: "", day: 1 },
   });
 
-  const selectedSpeaker = watch("speakerId");
+  const selectedSpeakerId = watch("speakerId");
   const selectedTheme = watch("theme");
+  const selectedDay = watch("day");
+  const startTime = watch("startTime");
+  const endTime = watch("endTime");
+
+  const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+
+  const conflict = useMemo(() => {
+    if (!startTime || !endTime || !selectedDay) return null;
+    const newStart = toMins(startTime);
+    const newEnd = toMins(endTime);
+    if (newStart >= newEnd) return "End time must be after start time";
+    const sameDay = (agendaItems as any[]).filter((a) => a.day === Number(selectedDay));
+    for (const item of sameDay) {
+      const match = item.timeSlot?.match(/(\d{2}:\d{2})\s*[–\-]\s*(\d{2}:\d{2})/);
+      if (!match) continue;
+      const existStart = toMins(match[1]);
+      const existEnd = toMins(match[2]);
+      if (newStart < existEnd && newEnd > existStart) {
+        return `Conflicts with "${item.sessionTitle}" (${item.timeSlot})`;
+      }
+    }
+    return null;
+  }, [startTime, endTime, selectedDay, agendaItems]);
 
   const onSubmit = async (data: AgendaFormData) => {
+    if (conflict) return;
     try {
-      const payload = { ...data, speakerId: data.speakerId || undefined };
+      const timeSlot = `${data.startTime} – ${data.endTime}`;
+      const payload = { ...data, timeSlot, speakerId: data.speakerId || undefined };
       const res = await fetch("/api/admin/agenda", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -513,33 +547,54 @@ const AgendaManagementTab = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Two-col row: Time Slot + Day */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Day row */}
+          <div className="space-y-1.5">
+            <label htmlFor="agenda-day" className="text-sm font-medium text-foreground">Day</label>
+            <input
+              id="agenda-day"
+              type="number"
+              min={1}
+              max={10}
+              {...register("day")}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+          </div>
+
+          {/* Time pickers row */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label htmlFor="agenda-timeSlot" className="text-sm font-medium text-foreground">
-                Time Slot <span className="text-destructive">*</span>
+              <label htmlFor="agenda-startTime" className="text-sm font-medium text-foreground">
+                Start Time <span className="text-destructive">*</span>
               </label>
               <input
-                id="agenda-timeSlot"
-                {...register("timeSlot")}
-                placeholder="e.g. 09:00 – 09:45"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                id="agenda-startTime"
+                type="time"
+                {...register("startTime")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
-              {errors.timeSlot && <p className="text-xs text-destructive">{errors.timeSlot.message}</p>}
+              {errors.startTime && <p className="text-xs text-destructive">{errors.startTime.message}</p>}
             </div>
-
             <div className="space-y-1.5">
-              <label htmlFor="agenda-day" className="text-sm font-medium text-foreground">Day</label>
+              <label htmlFor="agenda-endTime" className="text-sm font-medium text-foreground">
+                End Time <span className="text-destructive">*</span>
+              </label>
               <input
-                id="agenda-day"
-                type="number"
-                min={1}
-                max={10}
-                {...register("day")}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                id="agenda-endTime"
+                type="time"
+                {...register("endTime")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
+              {errors.endTime && <p className="text-xs text-destructive">{errors.endTime.message}</p>}
             </div>
           </div>
+
+          {/* Conflict warning */}
+          {conflict && (
+            <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2.5 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              {conflict}
+            </div>
+          )}
 
           {/* Session Title */}
           <div className="space-y-1.5">
@@ -555,17 +610,21 @@ const AgendaManagementTab = () => {
             {errors.sessionTitle && <p className="text-xs text-destructive">{errors.sessionTitle.message}</p>}
           </div>
 
-          {/* Speaker (dropdown from DB) */}
+          {/* Speaker dropdown — auto-fills theme */}
           <div className="space-y-1.5">
             <label htmlFor="agenda-speaker" className="text-sm font-medium text-foreground">Speaker</label>
             <select
               id="agenda-speaker"
-              value={selectedSpeaker || ""}
-              onChange={(e) => setValue("speakerId", e.target.value)}
+              value={selectedSpeakerId || ""}
+              onChange={(e) => {
+                setValue("speakerId", e.target.value);
+                const sp = (speakers as any[]).find((s) => s._id === e.target.value);
+                setValue("theme", sp?.theme || "");
+              }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="">No speaker assigned</option>
-              {speakers.map((sp: any) => (
+              {(speakers as any[]).map((sp) => (
                 <option key={sp._id} value={sp._id}>
                   {sp.academicTitle ? `${sp.academicTitle} ` : ""}{sp.fullName}{sp.affiliation ? ` — ${sp.affiliation}` : ""}
                 </option>
@@ -584,9 +643,14 @@ const AgendaManagementTab = () => {
             />
           </div>
 
-          {/* Theme */}
+          {/* Theme — auto-populated from speaker, still editable */}
           <div className="space-y-1.5">
-            <label htmlFor="agenda-theme" className="text-sm font-medium text-foreground">Theme</label>
+            <label htmlFor="agenda-theme" className="text-sm font-medium text-foreground">
+              Theme
+              {selectedSpeakerId && selectedTheme && (
+                <span className="ml-2 text-xs text-muted-foreground font-normal">auto-filled from speaker</span>
+              )}
+            </label>
             <select
               id="agenda-theme"
               value={selectedTheme || ""}
@@ -602,7 +666,7 @@ const AgendaManagementTab = () => {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!conflict}
             className="w-full bg-primary text-primary-foreground px-5 py-2.5 rounded-md font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
             {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Adding…</> : <><PlusCircle className="h-4 w-4" /> Add Session</>}

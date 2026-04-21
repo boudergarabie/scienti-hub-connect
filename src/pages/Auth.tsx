@@ -24,7 +24,8 @@ const Auth = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      let data: any = {};
+      try { data = await res.json(); } catch { /* empty body */ }
 
       if (res.ok) {
         login({ _id: data._id, name: data.name, email: data.email, role: data.role, userCategory: data.userCategory }, data.token);
