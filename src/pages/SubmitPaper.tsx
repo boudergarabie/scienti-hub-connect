@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { CONFERENCE } from "@/data/mockData";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, AlertCircle, Info } from "lucide-react";
+import { CheckCircle, AlertCircle, Info, FileText, UploadCloud, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -12,17 +12,19 @@ interface FormErrors {
   [key: string]: string;
 }
 
+const MAX_PDF_MB = 10;
+
 const SubmitPaper = () => {
   const { toast } = useToast();
   const { isAuthenticated, isAdmin, token, user, updateUserCategory } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       toast({ title: "Auth Required", description: "Please sign in to submit a paper.", variant: "destructive" });
       navigate("/auth");
     }
-    // Admins manage papers, they don't submit
     if (isAdmin) {
       toast({ title: "Access Denied", description: "Admins manage papers via the Dashboard.", variant: "destructive" });
       navigate("/dashboard");
@@ -37,12 +39,14 @@ const SubmitPaper = () => {
     coAuthors: "",
     track: "",
   });
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfError, setPdfError] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Pre-fill author info when user data becomes available
   useEffect(() => {
     if (user) {
       setForm(prev => ({
@@ -52,6 +56,26 @@ const SubmitPaper = () => {
       }));
     }
   }, [user]);
+
+  const validatePdf = (file: File): string => {
+    if (file.type !== "application/pdf") return "Only PDF files are accepted";
+    if (file.size > MAX_PDF_MB * 1024 * 1024) return `File must be under ${MAX_PDF_MB} MB`;
+    return "";
+  };
+
+  const handlePdfChange = (file: File | null) => {
+    if (!file) { setPdfFile(null); setPdfError(""); return; }
+    const err = validatePdf(file);
+    setPdfError(err);
+    setPdfFile(err ? null : file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handlePdfChange(file);
+  };
 
   const validate = (field: string, value: string): string => {
     switch (field) {
@@ -80,31 +104,23 @@ const SubmitPaper = () => {
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    // Only show errors after the field has been touched
     if (touched[field]) {
-      const error = validate(field, value);
-      setErrors((prev) => ({ ...prev, [field]: error }));
+      setErrors((prev) => ({ ...prev, [field]: validate(field, value) }));
     }
   };
 
   const handleBlur = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    const error = validate(field, form[field as keyof typeof form]);
-    setErrors((prev) => ({ ...prev, [field]: error }));
+    setErrors((prev) => ({ ...prev, [field]: validate(field, form[field as keyof typeof form]) }));
   };
 
-  // Determine if the form is valid for submit
   const isFormValid = useMemo(() => {
     const requiredFields = ["paperTitle", "abstract", "authorName", "authorEmail", "track"] as const;
-    return requiredFields.every(field => {
-      const value = form[field];
-      return validate(field, value) === "";
-    });
-  }, [form]);
+    return requiredFields.every(field => validate(field, form[field]) === "") && !pdfError;
+  }, [form, pdfError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Touch all fields to show errors
     const allTouched: Record<string, boolean> = {};
     const newErrors: FormErrors = {};
     Object.entries(form).forEach(([key, val]) => {
@@ -120,53 +136,50 @@ const SubmitPaper = () => {
 
     setIsSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append("paperTitle", form.paperTitle);
+      formData.append("abstract", form.abstract);
+      formData.append("authorsList", form.coAuthors);
+      formData.append("trackTheme", form.track);
+      if (pdfFile) formData.append("paperFile", pdfFile);
+
       const res = await fetch("/api/submissions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          paperTitle: form.paperTitle,
-          abstract: form.abstract,
-          authorsList: form.coAuthors,
-          trackTheme: form.track,
-        }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to submit paper, please try again.");
-      }
+      if (!res.ok) throw new Error("Failed to submit paper, please try again.");
 
-      // Automatic Role Promotion for Attendees submitting a paper
-      if (user?.userCategory !== 'Author') {
+      if (user?.userCategory !== "Author") {
         try {
           const catRes = await fetch("/api/auth/category", {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({ category: 'Author' })
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ category: "Author" }),
           });
-          if (catRes.ok) {
-            updateUserCategory('Author');
-          }
+          if (catRes.ok) updateUserCategory("Author");
         } catch (catErr) {
           console.error("Failed to update user category automatically", catErr);
         }
       }
 
       setSubmitted(true);
-      toast({
-        title: "Paper Submitted!",
-        description: "Your paper has been received. You can track its status in the Dashboard.",
-      });
+      toast({ title: "Paper Submitted!", description: "Your paper has been received. Track its status in the Dashboard." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setSubmitted(false);
+    setForm({ paperTitle: "", abstract: "", authorName: user?.name || "", authorEmail: user?.email || "", coAuthors: "", track: "" });
+    setPdfFile(null);
+    setPdfError("");
+    setTouched({});
+    setErrors({});
   };
 
   if (submitted) {
@@ -179,10 +192,7 @@ const SubmitPaper = () => {
             Your paper "{form.paperTitle}" has been submitted successfully. Track its status in the{" "}
             <a href="/dashboard" className="text-primary underline">Dashboard</a>.
           </p>
-          <button
-            onClick={() => { setSubmitted(false); setForm({ paperTitle: "", abstract: "", authorName: user?.name || "", authorEmail: user?.email || "", coAuthors: "", track: "" }); setTouched({}); setErrors({}); }}
-            className="bg-primary text-primary-foreground px-6 py-3 rounded-md font-semibold"
-          >
+          <button onClick={resetForm} className="bg-primary text-primary-foreground px-6 py-3 rounded-md font-semibold">
             Submit Another Paper
           </button>
         </div>
@@ -213,11 +223,10 @@ const SubmitPaper = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-card space-y-6">
-          {/* Validation Info Banner */}
           <div className="flex items-start gap-2 bg-primary/5 border border-primary/10 rounded-lg p-3">
             <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground">
-              All required fields must be filled correctly before submission. The abstract must contain at least <strong>50 characters</strong> and a valid email is required.
+              All required fields must be filled before submission. The abstract needs at least <strong>50 characters</strong>. A PDF upload is optional but recommended.
             </p>
           </div>
 
@@ -251,9 +260,7 @@ const SubmitPaper = () => {
                 <FieldError field="abstract" />
                 <FieldSuccess field="abstract" />
               </div>
-              <span className={`text-xs font-medium shrink-0 ml-4 ${
-                form.abstract.trim().length >= 50 ? "text-teal" : "text-muted-foreground"
-              }`}>
+              <span className={`text-xs font-medium shrink-0 ml-4 ${form.abstract.trim().length >= 50 ? "text-teal" : "text-muted-foreground"}`}>
                 {form.abstract.trim().length}/50 chars
               </span>
             </div>
@@ -307,9 +314,7 @@ const SubmitPaper = () => {
               onChange={(e) => handleChange("track", e.target.value)}
               onBlur={() => handleBlur("track")}
               className={`w-full bg-background border rounded-md px-3 py-2 text-sm text-foreground ${
-                touched.track
-                  ? errors.track ? "border-destructive" : "border-teal"
-                  : "border-input"
+                touched.track ? (errors.track ? "border-destructive" : "border-teal") : "border-input"
               }`}
             >
               <option value="">Select a track</option>
@@ -319,6 +324,62 @@ const SubmitPaper = () => {
             </select>
             <FieldError field="track" />
             <FieldSuccess field="track" />
+          </div>
+
+          {/* PDF Upload */}
+          <div>
+            <Label>Paper PDF (optional — max {MAX_PDF_MB} MB)</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => handlePdfChange(e.target.files?.[0] ?? null)}
+            />
+
+            {!pdfFile ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={`mt-1.5 flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg py-8 cursor-pointer transition-colors ${
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : pdfError
+                    ? "border-destructive bg-destructive/5"
+                    : "border-border hover:border-primary/50 hover:bg-muted/40"
+                }`}
+              >
+                <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-primary">Click to upload</span> or drag & drop
+                </p>
+                <p className="text-xs text-muted-foreground">PDF only · up to {MAX_PDF_MB} MB</p>
+              </div>
+            ) : (
+              <div className="mt-1.5 flex items-center gap-3 border border-teal/40 bg-teal/5 rounded-lg px-4 py-3">
+                <FileText className="h-8 w-8 text-teal shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{pdfFile.name}</p>
+                  <p className="text-xs text-muted-foreground">{(pdfFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setPdfFile(null); setPdfError(""); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                  aria-label="Remove file"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            {pdfError && (
+              <p className="flex items-center gap-1 text-destructive text-sm mt-1">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {pdfError}
+              </p>
+            )}
           </div>
 
           <button

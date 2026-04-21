@@ -2,24 +2,27 @@ import express from 'express';
 import { auth } from '../middleware/auth.js';
 import Submission from '../models/Submission.js';
 import SpeakerRequest from '../models/SpeakerRequest.js';
+import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
 // @route   POST /api/submissions
-// @desc    Submit a new paper
+// @desc    Submit a new paper (multipart/form-data, optional PDF)
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.single('paperFile'), async (req, res) => {
   try {
     const { paperTitle, abstract, authorsList, trackTheme } = req.body;
-    
+    const paperFileURL = req.file ? `/uploads/${req.file.filename}` : '';
+
     const newSubmission = await Submission.create({
       authorId: req.user.id,
       paperTitle,
       abstract,
       authorsList,
       trackTheme,
+      paperFileURL,
     });
-    
+
     res.status(201).json(newSubmission);
   } catch (error) {
     res.status(500).json({ message: error.message });

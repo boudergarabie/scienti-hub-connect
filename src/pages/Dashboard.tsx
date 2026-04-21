@@ -3,7 +3,8 @@ import { CONFERENCE } from "@/data/mockData";
 import {
   FileText, Clock, CheckCircle, XCircle, Eye, BookOpen,
   ChevronDown, PlusCircle, Users, CalendarDays, Loader2, Camera, X,
-  Mic2, Sparkles, AlertCircle, ThumbsUp, ThumbsDown, MessageSquare
+  Mic2, Sparkles, AlertCircle, ThumbsUp, ThumbsDown, MessageSquare,
+  Download, Send
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -107,18 +108,20 @@ const PaperManagementTab = () => {
                 <th className="text-left px-5 py-3 font-semibold text-foreground">Author</th>
                 <th className="text-left px-5 py-3 font-semibold text-foreground">Track</th>
                 <th className="text-left px-5 py-3 font-semibold text-foreground">Submitted</th>
+                <th className="text-left px-5 py-3 font-semibold text-foreground">PDF</th>
                 <th className="text-left px-5 py-3 font-semibold text-foreground">Status</th>
                 <th className="text-left px-5 py-3 font-semibold text-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Loading submissions...</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Loading submissions...</td></tr>
               ) : submissions.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">No submissions yet.</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">No submissions yet.</td></tr>
               ) : submissions.map((sub: any) => {
                 const { color, icon } = statusConfig[sub.status as Submission["status"]] || statusConfig["Pending"];
                 const subId = sub._id || sub.id;
+                const isAccepted = sub.status === "Accepted";
                 return (
                   <tr key={subId} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-5 py-4">
@@ -136,34 +139,61 @@ const PaperManagementTab = () => {
                     <td className="px-5 py-4 text-muted-foreground">{sub.trackTheme || sub.track}</td>
                     <td className="px-5 py-4 text-muted-foreground">{new Date(sub.submittedAt).toLocaleDateString()}</td>
                     <td className="px-5 py-4">
+                      {sub.paperFileURL ? (
+                        <a
+                          href={sub.paperFileURL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-xs font-medium transition-colors"
+                        >
+                          <Download className="h-3.5 w-3.5" /> PDF
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${color}`}>
                         {icon} {sub.status}
                       </span>
                     </td>
                     <td className="px-5 py-4 relative">
-                      <button
-                        onClick={() => setOpenDropdown(openDropdown === subId ? null : subId)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-md text-xs font-medium text-foreground transition-colors"
-                      >
-                        Update <ChevronDown className="h-3 w-3" />
-                      </button>
-                      {openDropdown === subId && (
-                        <div className="absolute right-5 top-12 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
-                          {ALL_STATUSES.map((status) => {
-                            const cfg = statusConfig[status];
-                            return (
-                              <button
-                                key={status}
-                                onClick={() => statusMutation.mutate({ id: subId, status })}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
-                              >
-                                <span className={`inline-flex items-center gap-1 ${cfg.color} px-2 py-0.5 rounded-full text-xs`}>
-                                  {cfg.icon} {status}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                      {isAccepted ? (
+                        <button
+                          onClick={() => statusMutation.mutate({ id: subId, status: "Published" })}
+                          disabled={statusMutation.isPending}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
+                        >
+                          <Send className="h-3 w-3" /> Publish
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setOpenDropdown(openDropdown === subId ? null : subId)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-md text-xs font-medium text-foreground transition-colors"
+                          >
+                            Update <ChevronDown className="h-3 w-3" />
+                          </button>
+                          {openDropdown === subId && (
+                            <div className="absolute right-5 top-12 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
+                              {ALL_STATUSES.map((status) => {
+                                const cfg = statusConfig[status];
+                                return (
+                                  <button
+                                    key={status}
+                                    onClick={() => statusMutation.mutate({ id: subId, status })}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                                  >
+                                    <span className={`inline-flex items-center gap-1 ${cfg.color} px-2 py-0.5 rounded-full text-xs`}>
+                                      {cfg.icon} {status}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
                       )}
                     </td>
                   </tr>
