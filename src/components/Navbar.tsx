@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, GraduationCap, LogOut, Shield } from "lucide-react";
 import { CONFERENCE } from "@/data/mockData";
@@ -6,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, isAdmin, logout, user } = useAuth();
@@ -50,10 +52,11 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    window.location.href = "/";
   };
 
   return (
+    <>
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2">
@@ -94,7 +97,7 @@ const Navbar = () => {
               )}
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => setConfirmLogout(true)}
               className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
             >
               <LogOut className="h-4 w-4" />
@@ -135,7 +138,7 @@ const Navbar = () => {
           ))}
           {isAuthenticated ? (
             <button
-              onClick={() => { handleLogout(); setOpen(false); }}
+              onClick={() => { setConfirmLogout(true); setOpen(false); }}
               className="w-full text-left px-6 py-3 text-sm font-medium text-destructive transition-colors hover:bg-muted flex items-center gap-2"
             >
               <LogOut className="h-4 w-4" />
@@ -153,6 +156,45 @@ const Navbar = () => {
         </div>
       )}
     </nav>
+
+      {/* Logout confirmation — portalled to body so fixed covers full viewport */}
+      {confirmLogout && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setConfirmLogout(false)}
+          />
+          {/* Dialog */}
+          <div className="relative bg-card border border-border rounded-xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                <LogOut className="h-5 w-5 text-destructive" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-foreground">Sign out?</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              You will be signed out of your account and redirected to the home page.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmLogout(false)}
+                className="flex-1 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
 

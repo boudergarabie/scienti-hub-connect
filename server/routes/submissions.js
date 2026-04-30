@@ -12,18 +12,49 @@ const router = express.Router();
 router.post('/', auth, upload.single('paperFile'), async (req, res) => {
   try {
     const { paperTitle, abstract, authorsList, trackTheme } = req.body;
-    const paperFileURL = req.file ? `/uploads/${req.file.filename}` : '';
-
-    const newSubmission = await Submission.create({
+    const newSubmission = new Submission({
       authorId: req.user.id,
-      paperTitle,
-      abstract,
-      authorsList,
-      trackTheme,
-      paperFileURL,
+      paperTitle: paperTitle?.trim(),
+      abstract: abstract?.trim(),
+      authorsList: authorsList?.trim() || '',
+      trackTheme: trackTheme?.trim() || '',
     });
 
+    if (req.file) {
+      newSubmission.paperFileData = req.file.buffer;
+      newSubmission.paperFileContentType = req.file.mimetype;
+      newSubmission.paperFileName = req.file.originalname;
+      newSubmission.paperFileSize = req.file.size;
+      newSubmission.paperFileURL = `/api/submissions/${newSubmission._id}/file`;
+    }
+
+    await newSubmission.save();
     res.status(201).json(newSubmission);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/submissions/:id/file
+// @desc    Stream a submitted paper PDF
+// @access  Public
+router.get('/:id/file', async (req, res) => {
+  try {
+    const submission = await Submission.findById(req.params.id).select(
+      '+paperFileData +paperFileContentType +paperFileName'
+    );
+
+    if (!submission || !submission.paperFileData) {
+      return res.status(404).json({ message: 'Paper file not found' });
+    }
+
+    res.setHeader('Content-Type', submission.paperFileContentType || 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${submission.paperFileName || `submission-${submission._id}.pdf`}"`
+    );
+
+    res.send(submission.paperFileData);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

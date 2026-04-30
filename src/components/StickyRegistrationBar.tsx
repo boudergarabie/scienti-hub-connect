@@ -8,7 +8,7 @@ const StickyRegistrationBar = () => {
       <div className="container mx-auto flex items-center justify-between gap-4">
         <p className="text-sm font-medium truncate">
           <span className="text-gold font-semibold">{CONFERENCE.acronym}</span>
-          <span className="hidden sm:inline"> — June 15–17, 2026 · Algiers, Algeria</span>
+          <span className="hidden sm:inline"> — May 2–4, 2026 · Blida, Algeria</span>
         </p>
         <Link
           to="/submit"

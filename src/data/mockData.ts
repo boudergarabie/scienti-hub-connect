@@ -37,16 +37,17 @@ export interface CommitteeMember {
   name: string;
   role: string;
   affiliation: string;
+  country?: string;
   type: "organizing" | "scientific";
 }
 
 export const CONFERENCE = {
   name: "International Conference on Sustainable Innovation & Technology",
   acronym: "ICSIT 2026",
-  date: new Date("2026-06-15T09:00:00"),
-  endDate: new Date("2026-06-17T18:00:00"),
-  location: "University of Science & Technology, Algiers, Algeria",
-  venue: "Auditorium A — Central Campus",
+  date: new Date("2026-05-02T09:00:00"),
+  endDate: new Date("2026-05-04T18:00:00"),
+  location: "University Blida Saad Dahleb, Blida, Algeria",
+  venue: "Central Library — University Blida Saad Dahleb",
   themes: [
     "Renewable Energy Systems",
     "Artificial Intelligence & Ethics",
@@ -69,17 +70,17 @@ export const speakers: Speaker[] = [
 ];
 
 export const committee: CommitteeMember[] = [
-  { name: "Prof. Mohamed Larbi", role: "Conference Chair", affiliation: "University of Algiers", type: "organizing" },
-  { name: "Dr. Sarah Khediri", role: "Co-Chair", affiliation: "USTHB, Algiers", type: "organizing" },
-  { name: "Dr. Omar Benali", role: "Secretary General", affiliation: "University of Oran", type: "organizing" },
-  { name: "Ms. Nadia Cherif", role: "Logistics Coordinator", affiliation: "ICSIT Foundation", type: "organizing" },
-  { name: "Prof. Ahmed Bouazza", role: "Finance Officer", affiliation: "University of Constantine", type: "organizing" },
-  { name: "Prof. Amina Bensalem", role: "Scientific Chair", affiliation: "University of Algiers", type: "scientific" },
-  { name: "Prof. Jean-Luc Moreau", role: "Track Chair — AI & Ethics", affiliation: "CNRS, Paris", type: "scientific" },
-  { name: "Prof. Maria Gonzalez", role: "Track Chair — Urban Development", affiliation: "University of Barcelona", type: "scientific" },
-  { name: "Dr. Hans Weber", role: "Track Chair — Smart Materials", affiliation: "TU Munich", type: "scientific" },
-  { name: "Prof. Fatima Zahra El-Idrissi", role: "Reviewer Coordinator", affiliation: "Mohammed V University", type: "scientific" },
-  { name: "Prof. Aisha Okonkwo", role: "Track Chair — EdTech", affiliation: "University of Lagos", type: "scientific" },
+  { name: "Prof. Mohamed Larbi", role: "Conference Chair", affiliation: "University of Algiers", country: "Algeria", type: "organizing" },
+  { name: "Dr. Sarah Khediri", role: "Co-Chair", affiliation: "USTHB, Algiers", country: "Algeria", type: "organizing" },
+  { name: "Dr. Omar Benali", role: "Secretary General", affiliation: "University of Oran", country: "Algeria", type: "organizing" },
+  { name: "Ms. Nadia Cherif", role: "Logistics Coordinator", affiliation: "ICSIT Foundation", country: "Algeria", type: "organizing" },
+  { name: "Prof. Ahmed Bouazza", role: "Finance Officer", affiliation: "University of Constantine", country: "Algeria", type: "organizing" },
+  { name: "Prof. Amina Bensalem", role: "Scientific Chair", affiliation: "University of Algiers", country: "Algeria", type: "scientific" },
+  { name: "Prof. Jean-Luc Moreau", role: "Track Chair — AI & Ethics", affiliation: "CNRS, Paris", country: "France", type: "scientific" },
+  { name: "Prof. Maria Gonzalez", role: "Track Chair — Urban Development", affiliation: "University of Barcelona", country: "Spain", type: "scientific" },
+  { name: "Dr. Hans Weber", role: "Track Chair — Smart Materials", affiliation: "TU Munich", country: "Germany", type: "scientific" },
+  { name: "Prof. Fatima Zahra El-Idrissi", role: "Reviewer Coordinator", affiliation: "Mohammed V University", country: "Morocco", type: "scientific" },
+  { name: "Prof. Aisha Okonkwo", role: "Track Chair — EdTech", affiliation: "University of Lagos", country: "Nigeria", type: "scientific" },
 ];
 
 export const agenda: AgendaItem[] = [

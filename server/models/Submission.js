@@ -12,6 +12,10 @@ const submissionSchema = new mongoose.Schema({
     default: 'Pending',
   },
   paperFileURL: { type: String, default: '' },
+  paperFileData: { type: Buffer, select: false },
+  paperFileContentType: { type: String, select: false, default: '' },
+  paperFileName: { type: String, select: false, default: '' },
+  paperFileSize: { type: Number, select: false, default: 0 },
   submittedAt: { type: Date, default: Date.now },
 });
 

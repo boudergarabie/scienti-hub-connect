@@ -18,7 +18,7 @@ import SpeakerOnboarding from "@/pages/SpeakerOnboarding";
 import Certificate from "@/pages/Certificate";
 import Auth from "@/pages/Auth";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import OnboardingModal from "@/components/OnboardingModal";
 
 const queryClient = new QueryClient({
@@ -45,6 +45,40 @@ queryClient.prefetchQuery({
   queryFn: () => fetch("/api/agenda").then(r => r.json()),
 });
 
+// Inner layout — needs to live inside AuthProvider + BrowserRouter to call useAuth
+const AppLayout = () => {
+  const { isAuthenticated } = useAuth();
+  return (
+    <>
+      <OnboardingModal />
+      <Navbar />
+      {/* Pad bottom of every page enough to clear the sticky bar when it's visible */}
+      <main className={!isAuthenticated ? "pb-20" : ""}>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/committee" element={<Committee />} />
+        <Route path="/speakers" element={<Speakers />} />
+        <Route path="/program" element={<Program />} />
+        <Route path="/auth" element={<Auth />} />
+
+        {/* Protected Routes — require authentication */}
+        <Route path="/submit" element={<ProtectedRoute><SubmitPaper /></ProtectedRoute>} />
+        <Route path="/management" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/certificate" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
+        <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDirectory /></ProtectedRoute>} />
+        <Route path="/speaker-onboarding" element={<ProtectedRoute><SpeakerOnboarding /></ProtectedRoute>} />
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      </main>
+      {/* Only show the sticky CTA bar to guests — logged-in users don't need it */}
+      {!isAuthenticated && <StickyRegistrationBar />}
+    </>
+  );
+};
+
 const App = () => (
   <AuthProvider>
     <QueryClientProvider client={queryClient}>
@@ -52,27 +86,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <OnboardingModal />
-          <Navbar />
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/committee" element={<Committee />} />
-            <Route path="/speakers" element={<Speakers />} />
-            <Route path="/program" element={<Program />} />
-            <Route path="/auth" element={<Auth />} />
-
-            {/* Protected Routes — require authentication */}
-            <Route path="/submit" element={<ProtectedRoute><SubmitPaper /></ProtectedRoute>} />
-            <Route path="/management" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/certificate" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
-            <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDirectory /></ProtectedRoute>} />
-            <Route path="/speaker-onboarding" element={<ProtectedRoute><SpeakerOnboarding /></ProtectedRoute>} />
-
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <StickyRegistrationBar />
+          <AppLayout />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

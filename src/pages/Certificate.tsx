@@ -7,6 +7,136 @@ import jsPDF from "jspdf";
 
 type CertType = "attendance" | "presentation";
 
+// ─── Visual preview (mirrors the PDF layout) ──────────────────
+const CertPreview = ({
+  type,
+  displayName,
+  paperTitle,
+}: {
+  type: CertType;
+  displayName: string;
+  paperTitle?: string;
+}) => {
+  const certLabel =
+    type === "attendance"
+      ? "CERTIFICATE OF ATTENDANCE"
+      : "CERTIFICATE OF PRESENTATION";
+
+  return (
+    /* 297 × 210 mm → aspect ratio 297/210 ≈ 1.414 */
+    <div className="relative w-full" style={{ paddingBottom: "70.7%" }}>
+      <div
+        className="absolute inset-0 rounded-lg overflow-hidden shadow-2xl"
+        style={{
+          background: "#ffffff",
+          border: "3px solid #c9a84c",
+          fontFamily: "Georgia, 'Times New Roman', serif",
+        }}
+      >
+        {/* Inner navy border */}
+        <div
+          className="absolute"
+          style={{
+            inset: "6px",
+            border: "1px solid #1a3f7a",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Centred content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-[8%] text-center">
+          {/* Conference acronym */}
+          <p
+            className="font-bold tracking-wide"
+            style={{ color: "#1a3f7a", fontSize: "clamp(14px, 3.2vw, 30px)" }}
+          >
+            ICSIT 2026
+          </p>
+
+          {/* Gold rule */}
+          <div className="w-[40%] my-1.5" style={{ height: "1px", background: "#c9a84c" }} />
+
+          {/* Cert type */}
+          <p
+            className="uppercase tracking-widest"
+            style={{ color: "#5a5a5a", fontSize: "clamp(6px, 1.1vw, 11px)" }}
+          >
+            {certLabel}
+          </p>
+
+          {/* This certifies that */}
+          <p
+            className="mt-[3%]"
+            style={{ color: "#828282", fontSize: "clamp(5px, 0.9vw, 9px)" }}
+          >
+            This certifies that
+          </p>
+
+          {/* Name + underline */}
+          <div className="relative mt-[1%] mb-[1%]">
+            <p
+              className="font-bold"
+              style={{
+                color: "#1a3f7a",
+                fontSize: "clamp(11px, 2.4vw, 22px)",
+              }}
+            >
+              {displayName || "Your Name"}
+            </p>
+            <div style={{ height: "1px", background: "#c9a84c", marginTop: "2px" }} />
+          </div>
+
+          {/* Body */}
+          {type === "presentation" && paperTitle ? (
+            <>
+              <p style={{ color: "#464646", fontSize: "clamp(5px, 0.85vw, 9px)" }}>
+                has presented the research paper
+              </p>
+              <p
+                className="italic max-w-[70%] mt-[1%]"
+                style={{ color: "#1a3f7a", fontSize: "clamp(5px, 0.9vw, 9px)" }}
+              >
+                "{paperTitle}"
+              </p>
+              <p className="mt-[1%]" style={{ color: "#464646", fontSize: "clamp(4px, 0.8vw, 8px)" }}>
+                at the International Conference on Sustainable Innovation &amp; Technology
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ color: "#464646", fontSize: "clamp(5px, 0.85vw, 9px)" }}>
+                has attended the
+              </p>
+              <p style={{ color: "#464646", fontSize: "clamp(5px, 0.85vw, 9px)" }}>
+                International Conference on Sustainable Innovation &amp; Technology
+              </p>
+            </>
+          )}
+
+          <p className="mt-[1%]" style={{ color: "#464646", fontSize: "clamp(4px, 0.8vw, 8px)" }}>
+            May 2–4, 2026 · Central Library, University Blida Saad Dahleb, Algeria
+          </p>
+
+          {/* Gold separator */}
+          <div className="w-[40%] mt-[4%]" style={{ height: "1px", background: "#c9a84c" }} />
+
+          {/* Signature lines */}
+          <div className="flex justify-between w-[55%] mt-[3%]">
+            <div className="text-center">
+              <div style={{ width: "80px", height: "1px", background: "#3c3c3c", margin: "0 auto 3px" }} />
+              <p style={{ color: "#646464", fontSize: "clamp(4px, 0.75vw, 7px)" }}>Conference Chair</p>
+            </div>
+            <div className="text-center">
+              <div style={{ width: "80px", height: "1px", background: "#3c3c3c", margin: "0 auto 3px" }} />
+              <p style={{ color: "#646464", fontSize: "clamp(4px, 0.75vw, 7px)" }}>Scientific Chair</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface CertEntry {
   id: string;
   label: string;
@@ -112,7 +242,7 @@ function generateCertificate(
   }
 
   doc.text(
-    "June 15–17, 2026 · University of Science & Technology, Algiers, Algeria",
+    "May 2–4, 2026 · Central Library, University Blida Saad Dahleb, Algeria",
     cx,
     bodyY,
     { align: "center" }
@@ -189,10 +319,10 @@ const Certificate = () => {
   const roleBadge = isAuthor ? "Author / Presenter" : "Attendee";
 
   return (
-    <div className="pb-24 pt-10 px-4">
+    <div className="pb-10 pt-10 px-4">
       <div className="container mx-auto max-w-2xl">
         <div className="text-center mb-10">
-          <h1 className="font-display text-4xl font-bold text-foreground mb-2">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-2">
             Your Certificates
           </h1>
           <p className="text-muted-foreground">
@@ -244,26 +374,31 @@ const Certificate = () => {
             </div>
           )}
 
-          {/* Download card */}
-          <div className="bg-card border border-border rounded-xl p-8 text-center shadow-card">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <FileText className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="font-display text-xl font-semibold text-foreground mb-1">
-              {activeCert.type === "attendance"
-                ? "Certificate of Attendance"
-                : "Certificate of Presentation"}
-            </h3>
-            <p className="text-muted-foreground text-sm mb-1">{displayName}</p>
-            {activeCert.paperTitle && (
-              <p className="text-muted-foreground text-xs italic mb-1">
-                "{activeCert.paperTitle}"
-              </p>
-            )}
-            <p className="text-muted-foreground text-xs mb-6">
-              Landscape A4 PDF · ICSIT 2026
-            </p>
+          {/* Certificate preview */}
+          <div className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-card">
+            <CertPreview
+              type={activeCert.type}
+              displayName={displayName}
+              paperTitle={activeCert.paperTitle}
+            />
+          </div>
 
+          {/* Download card */}
+          <div className="bg-card border border-border rounded-xl px-6 py-5 text-center shadow-card flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-left">
+              <h3 className="font-display text-base font-semibold text-foreground">
+                {activeCert.type === "attendance"
+                  ? "Certificate of Attendance"
+                  : "Certificate of Presentation"}
+              </h3>
+              <p className="text-muted-foreground text-sm">{displayName}</p>
+              {activeCert.paperTitle && (
+                <p className="text-muted-foreground text-xs italic mt-0.5">
+                  "{activeCert.paperTitle}"
+                </p>
+              )}
+              <p className="text-muted-foreground text-xs mt-0.5">Landscape A4 PDF · ICSIT 2026</p>
+            </div>
             <button
               onClick={() =>
                 generateCertificate(
@@ -272,9 +407,9 @@ const Certificate = () => {
                   activeCert.paperTitle
                 )
               }
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-md font-semibold hover:opacity-90 transition-opacity"
+              className="shrink-0 inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-md font-semibold hover:opacity-90 transition-opacity"
             >
-              <Download className="h-4 w-4" /> Download Certificate
+              <Download className="h-4 w-4" /> Download
             </button>
           </div>
         </div>

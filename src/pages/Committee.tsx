@@ -1,5 +1,5 @@
 import { committee } from "@/data/mockData";
-import { Users, FlaskConical } from "lucide-react";
+import { Users, FlaskConical, MapPin } from "lucide-react";
 
 const Committee = () => {
   const organizing = committee.filter((m) => m.type === "organizing");
@@ -28,6 +28,11 @@ const Committee = () => {
             <h3 className="font-display text-lg font-semibold text-foreground">{m.name}</h3>
             <p className="text-gold text-sm font-medium mt-1">{m.role}</p>
             <p className="text-muted-foreground text-sm mt-1">{m.affiliation}</p>
+            {m.country && (
+              <p className="flex items-center gap-1 text-muted-foreground text-xs mt-1.5">
+                <MapPin className="h-3 w-3 shrink-0" />{m.country}
+              </p>
+            )}
           </div>
         ))}
       </div>
@@ -35,10 +40,10 @@ const Committee = () => {
   );
 
   return (
-    <div className="pb-24 pt-10 px-4">
+    <div className="pb-10 pt-10 px-4">
       <div className="container mx-auto max-w-5xl space-y-14">
         <div className="text-center">
-          <h1 className="font-display text-4xl font-bold text-foreground mb-2">The Committee</h1>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-2">The Committee</h1>
           <p className="text-muted-foreground">Meet the people behind ICSIT 2026</p>
         </div>
         <Section

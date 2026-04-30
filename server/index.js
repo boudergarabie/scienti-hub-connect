@@ -57,7 +57,11 @@ app.use('/api/speakers', speakerRoutes);
 // Global JSON error handler — must have 4 params for Express to treat it as error middleware
 app.use((err, _req, res, _next) => {
   console.error(err);
-  const status = err.status || err.statusCode || 500;
+  const status =
+    err.status ||
+    err.statusCode ||
+    (err.code === 'LIMIT_FILE_SIZE' ? 400 : undefined) ||
+    500;
   res.status(status).json({ message: err.message || 'Internal server error' });
 });
 

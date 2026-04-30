@@ -194,10 +194,10 @@ const Speakers = () => {
   const hasActiveFilters = query || themeFilter;
 
   return (
-    <div className="pb-24 pt-10 px-4">
+    <div className="pb-10 pt-10 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-10">
-          <h1 className="font-display text-4xl font-bold text-foreground mb-2">Our Speakers</h1>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-2">Our Speakers</h1>
           <p className="text-muted-foreground">International experts presenting at ICSIT 2026</p>
         </div>
 

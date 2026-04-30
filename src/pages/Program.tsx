@@ -71,16 +71,17 @@ const Program = () => {
     });
 
   return (
-    <div className="pb-24 pt-10 px-4">
+    <div className="pb-10 pt-10 px-4">
       <div className="container mx-auto max-w-5xl">
         <div className="text-center mb-10">
-          <h1 className="font-display text-4xl font-bold text-foreground mb-2">Conference Program</h1>
-          <p className="text-muted-foreground">June 15–17, 2026 — Three days of scientific excellence</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-2">Conference Program</h1>
+          <p className="text-muted-foreground">May 2–4, 2026 — Three days of scientific excellence</p>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 mb-8 items-center">
-          <div className="flex gap-1 bg-muted rounded-lg p-1">
+        <div className="flex flex-col gap-3 mb-8 sm:flex-row sm:flex-wrap sm:items-center">
+          {/* Day tabs */}
+          <div className="flex gap-1 bg-muted rounded-lg p-1 self-start">
             {[1, 2, 3].map((d) => (
               <button
                 key={d}
@@ -96,17 +97,17 @@ const Program = () => {
           <select
             value={themeFilter}
             onChange={(e) => setThemeFilter(e.target.value)}
-            className="bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground"
+            className="bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground w-full sm:w-auto"
           >
             <option value="">All Themes</option>
             {themes.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search sessions, speakers, countries..."
+              placeholder="Search sessions or speakers…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -151,25 +152,29 @@ const Program = () => {
                     <Zap className="h-3.5 w-3.5" /> Happening Now
                   </div>
                 )}
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                  <div className="flex items-center gap-2 text-primary font-semibold text-sm min-w-[130px]">
-                    <Clock className="h-4 w-4" />
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                  <div className="flex items-center gap-2 text-primary font-semibold text-sm sm:min-w-[130px]">
+                    <Clock className="h-4 w-4 shrink-0" />
                     {item.timeSlot}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-lg font-semibold text-foreground">{item.sessionTitle}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display text-base sm:text-lg font-semibold text-foreground leading-snug">{item.sessionTitle}</h3>
                     {speaker && (
-                      <p className="text-muted-foreground text-sm mt-1">
-                        {speaker.academicTitle ? `${speaker.academicTitle} ` : ""}{speaker.fullName} — {speaker.affiliation}
+                      <p className="text-muted-foreground text-sm mt-1 break-words">
+                        {speaker.academicTitle ? `${speaker.academicTitle} ` : ""}{speaker.fullName}{speaker.affiliation ? ` — ${speaker.affiliation}` : ""}
                       </p>
                     )}
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-md text-muted-foreground">
-                        <MapPin className="h-3 w-3" /> {item.roomLocation || item.room}
-                      </span>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-md">
-                        {item.theme}
-                      </span>
+                      {(item.roomLocation || item.room) && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-md text-muted-foreground">
+                          <MapPin className="h-3 w-3 shrink-0" /> {item.roomLocation || item.room}
+                        </span>
+                      )}
+                      {item.theme && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-md">
+                          {item.theme}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

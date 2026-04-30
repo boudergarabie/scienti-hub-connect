@@ -184,7 +184,7 @@ const SubmitPaper = () => {
 
   if (submitted) {
     return (
-      <div className="pb-24 pt-20 px-4">
+      <div className="pb-10 pt-20 px-4">
         <div className="container mx-auto max-w-lg text-center">
           <CheckCircle className="h-16 w-16 text-teal mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold text-foreground mb-3">Submission Received!</h1>
@@ -215,10 +215,10 @@ const SubmitPaper = () => {
     ) : null;
 
   return (
-    <div className="pb-24 pt-10 px-4">
+    <div className="pb-10 pt-10 px-4">
       <div className="container mx-auto max-w-2xl">
         <div className="text-center mb-10">
-          <h1 className="font-display text-4xl font-bold text-foreground mb-2">Submit Your Paper</h1>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-2">Submit Your Paper</h1>
           <p className="text-muted-foreground">Share your research with the international community</p>
         </div>
 

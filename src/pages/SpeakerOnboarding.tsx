@@ -172,7 +172,7 @@ const SpeakerOnboarding = () => {
 
   if (loadingPapers || loadingRequest) {
     return (
-      <div className="pb-24 pt-10 px-4">
+      <div className="pb-10 pt-10 px-4">
         <div className="container mx-auto max-w-2xl text-center py-20">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
           <p className="text-muted-foreground">Loading your speaker onboarding status…</p>
@@ -184,7 +184,7 @@ const SpeakerOnboarding = () => {
   // No published papers — not eligible
   if (publishedPapers.length === 0) {
     return (
-      <div className="pb-24 pt-10 px-4">
+      <div className="pb-10 pt-10 px-4">
         <div className="container mx-auto max-w-lg text-center py-20">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-muted mb-4">
             <Mic2 className="h-6 w-6 text-muted-foreground" />
@@ -208,7 +208,7 @@ const SpeakerOnboarding = () => {
   // Already has a request (Pending or Approved)
   if (existingRequest && (existingRequest.status === "Pending" || existingRequest.status === "Approved")) {
     return (
-      <div className="pb-24 pt-10 px-4">
+      <div className="pb-10 pt-10 px-4">
         <div className="container mx-auto max-w-2xl">
           <div className="text-center mb-10">
             <h1 className="font-display text-4xl font-bold text-foreground mb-2">Speaker Onboarding</h1>
@@ -230,7 +230,7 @@ const SpeakerOnboarding = () => {
 
   // Show the form (no request, or rejected — allow resubmission)
   return (
-    <div className="pb-24 pt-10 px-4">
+    <div className="pb-10 pt-10 px-4">
       <div className="container mx-auto max-w-2xl">
         <div className="text-center mb-10">
           <h1 className="font-display text-4xl font-bold text-foreground mb-2">Speaker Onboarding</h1>
